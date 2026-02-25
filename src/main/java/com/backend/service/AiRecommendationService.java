@@ -26,7 +26,7 @@ public class AiRecommendationService {
     private final RestTemplate restTemplate;
 
     // Python FastAPI URL (change if different)
-    private final String PYTHON_BASE_URL = "http://localhost:8000";
+    private final String PYTHON_BASE_URL = "https://huggingface.co/spaces/rajpandith/ecom-ai-ml-backend";
 
     public AiRecommendationService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
