@@ -20,9 +20,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -41,11 +43,58 @@ public class ProductController {
         }
 
         @GetMapping("/recommendations")
-        public ResponseEntity<List<Long>> getRecommendations(
+        public ResponseEntity<?> getRecommendations(
                         @RequestParam Long userId,
                         @RequestParam(defaultValue = "10") int limit) {
                 List<Long> recIds = aiService.getRecommendedProductIds(userId, limit);
-                return ResponseEntity.ok(recIds);
+
+                return ResponseEntity.ok(getProductsByIds(recIds, userId));
+        }
+
+        @GetMapping("/products/by-ids")
+        public ResponseEntity<List<ProductDTO>> getProductsByIds(
+                        @RequestParam("ids") List<Long> ids,
+                        @RequestParam Long userId) { // ← make userId required (or add default logic if needed)
+
+                if (ids == null || ids.isEmpty()) {
+                        return ResponseEntity.ok(Collections.emptyList());
+                }
+
+                if (userId == null) {
+                        logger.warn("Missing userId in /products/by-ids request");
+                        return ResponseEntity.badRequest().body(null);
+                }
+
+                List<Product> products = productRepository.findAllByIdIn(ids);
+
+                // Preserve input order
+                Map<Long, Product> productMap = products.stream()
+                                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+                List<ProductDTO> dtos = ids.stream()
+                                .filter(productMap::containsKey)
+                                .map(pid -> {
+                                        Product product = productMap.get(pid);
+                                        PriceResponse priceInfo = aiService.getPersonalizedPrice(userId,
+                                                        product.getId());
+
+                                        return new ProductDTO(
+                                                        product.getId(),
+                                                        product.getName(),
+                                                        product.getBasePrice() != null ? product.getBasePrice()
+                                                                        : BigDecimal.ZERO,
+                                                        BigDecimal.valueOf(priceInfo.getSuggestedPrice()),
+                                                        priceInfo.getDiscountPercent(),
+                                                        priceInfo.getReason(),
+                                                        product.getImage(),
+                                                        product.getDesc());
+                                })
+                                .collect(Collectors.toList());
+
+                logger.info("Returned {} personalized products by ids for user {} → ids={}",
+                                dtos.size(), userId, ids);
+
+                return ResponseEntity.ok(dtos);
         }
 
         /**

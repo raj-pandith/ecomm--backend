@@ -3,10 +3,13 @@ package com.backend.dto;
 import java.util.List;
 
 import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Data
 public class RecommendationResponse {
     private Long userId;
+
+    @JsonProperty("recommended_product_ids")
     private List<Long> recommendedProductIds;
     private String message;
     private Long basedOnProductId;

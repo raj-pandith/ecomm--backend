@@ -86,6 +86,7 @@ public class AiRecommendationService {
             logger.debug("Recommendation response: status={}, body={}", response.getStatusCode(), response.getBody());
 
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                
                 return response.getBody().getRecommendedProductIds();
             }
         } catch (Exception e) {

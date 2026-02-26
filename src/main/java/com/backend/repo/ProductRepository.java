@@ -1,5 +1,6 @@
 package com.backend.repo;
 
+import java.util.Collection;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,5 +12,7 @@ import com.backend.model.Product;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     // You can add custom queries later if needed, e.g.:
     List<Product> findByCategory(String category);
+
+    List<Product> findAllByIdIn(Collection<Long> ids);
 
 }
